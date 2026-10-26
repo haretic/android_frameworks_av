@@ -51,6 +51,12 @@ constexpr auto PERMISSION_HARD_DENIED = permission::PermissionChecker::PERMISSIO
 
 using content::AttributionSourceState;
 
+// An attribution source's tag for AppOps: none stays none, as an empty tag is one the package
+// would have to declare
+static std::optional<String16> attributionTagOf(const std::optional<std::string>& tag) {
+    return tag.has_value() ? std::optional<String16>{String16{tag->c_str()}} : std::nullopt;
+}
+
 static const String16 sAndroidPermissionRecordAudio("android.permission.RECORD_AUDIO");
 static const String16 sModifyPhoneState("android.permission.MODIFY_PHONE_STATE");
 static const String16 sModifyAudioRouting("android.permission.MODIFY_AUDIO_ROUTING");
@@ -211,9 +217,7 @@ static int checkRecordingInternal(const AttributionSourceState &attributionSourc
                                       String16{attributionSource.packageName.value_or("").c_str()},
                                       attributionSource.uid),
                 false,
-                attributionSource.attributionTag.has_value()
-                        ? String16{attributionSource.attributionTag.value().c_str()}
-                        : String16{},
+                attributionTagOf(attributionSource.attributionTag),
                 msg);
     }
 }
@@ -269,9 +273,7 @@ void finishRecording(const AttributionSourceState &attributionSource, uint32_t v
                     resolveCallingPackage(
                             pc, String16{attributionSource.packageName.value_or("").c_str()},
                             attributionSource.uid),
-                    attributionSource.attributionTag.has_value()
-                            ? String16{attributionSource.attributionTag.value().c_str()}
-                            : String16{});
+                    attributionTagOf(attributionSource.attributionTag));
     }
 }
 
