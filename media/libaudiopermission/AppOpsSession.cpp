@@ -25,6 +25,12 @@ using ::android::content::AttributionSourceState;
 
 namespace android::media::permission {
 
+// An attribution source's tag for AppOps: none stays none, as an empty tag is one the package
+// would have to declare
+static std::optional<String16> attributionTagOf(const std::optional<std::string>& tag) {
+    return tag.has_value() ? std::optional<String16>{String16{tag->c_str()}} : std::nullopt;
+}
+
 // Package name param is unreliable (can be empty), but we should only get valid events based on
 // how we register the listener.
 binder::Status DefaultAppOpsFacade::OpMonitor::opChanged(int32_t op, int32_t, const String16&,
@@ -60,9 +66,7 @@ bool DefaultAppOpsFacade::startAccess(const ValidatedAttributionSourceState& att
         /*uid=*/ attr.uid,
         /*callingPackage=*/ String16{attr.packageName.value_or("").c_str()},
         /*startIfModeDefault=*/ false,
-        /*attributionTag=*/ attr.attributionTag.has_value() ?
-            String16{attr.attributionTag.value().c_str()}
-                                            : String16{},
+        /*attributionTag=*/ attributionTagOf(attr.attributionTag),
         /*message=*/ String16{"AppOpsSession start"})
     == AppOpsManager::MODE_ALLOWED;
 }
@@ -75,9 +79,7 @@ void DefaultAppOpsFacade::stopAccess(const ValidatedAttributionSourceState& attr
         /*op=*/ ops.attributedOp,
         /*uid=*/ attr.uid,
         /*callingPackage=*/ String16{attr.packageName.value_or("").c_str()},
-        /*attributionTag=*/ attr.attributionTag.has_value() ?
-                                            String16{attr.attributionTag.value().c_str()}
-                                            : String16{});
+        /*attributionTag=*/ attributionTagOf(attr.attributionTag));
 }
 
 bool DefaultAppOpsFacade::checkAccess(const ValidatedAttributionSourceState& attr, Ops ops) {
